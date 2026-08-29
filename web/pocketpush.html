@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketPush</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#e6edf3;
+    --muted:#8b949e;
+    --accent:#3fb950;
+    --accent-dim:#238636;
+    --danger:#f85149;
+    --mono:'SF Mono', 'Consolas', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, 'Segoe UI', Roboto, sans-serif;
+    padding:20px 16px 60px;
+    direction:rtl;
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+  h1{
+    font-size:1.3rem;
+    font-weight:700;
+    margin:0 0 4px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sub{color:var(--muted);font-size:0.9rem;margin:0 0 24px;line-height:1.6;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .step-num{
+    position:absolute;
+    top:-11px;
+    right:16px;
+    background:var(--accent-dim);
+    color:#fff;
+    font-size:0.72rem;
+    font-weight:700;
+    padding:2px 9px;
+    border-radius:20px;
+  }
+  .card-title{
+    font-size:0.95rem;
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  label{
+    display:block;
+    font-size:0.82rem;
+    color:var(--muted);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  input[type=text], input[type=password]{
+    width:100%;
+    background:#0d1117;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:11px 12px;
+    border-radius:8px;
+    font-size:0.95rem;
+    margin-bottom:14px;
+    font-family:var(--mono);
+    direction:ltr;
+    text-align:left;
+  }
+  input[type=text]:focus, input[type=password]:focus{
+    outline:none;
+    border-color:var(--accent-dim);
+  }
+  .row{display:flex;gap:10px;}
+  .row > div{flex:1;}
+  .filebtn{
+    display:block;
+    width:100%;
+    padding:14px;
+    background:#0d1117;
+    border:1.5px dashed var(--border);
+    border-radius:8px;
+    text-align:center;
+    color:var(--muted);
+    font-size:0.9rem;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+  .filebtn.active{border-color:var(--accent-dim);color:var(--accent);}
+  input[type=file]{display:none;}
+  .btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:var(--accent-dim);
+    color:#fff;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .btn:disabled{background:#21262d;color:var(--muted);}
+  .btn:active:not(:disabled){background:var(--accent);}
+  .btn.secondary{background:#21262d;}
+  .btn.danger{background:#b62324;}
+  .log{
+    background:#010409;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px;
+    font-family:var(--mono);
+    font-size:0.78rem;
+    color:var(--muted);
+    max-height:260px;
+    overflow-y:auto;
+    direction:ltr;
+    text-align:left;
+    white-space:pre-wrap;
+    word-break:break-all;
+    margin-top:14px;
+    display:none;
+  }
+  .log.show{display:block;}
+  .log .ok{color:var(--accent);}
+  .log .err{color:var(--danger);}
+  .log .dim{color:#484f58;}
+  .progress{
+    height:6px;
+    background:#21262d;
+    border-radius:3px;
+    overflow:hidden;
+    margin-top:10px;
+    display:none;
+  }
+  .progress.show{display:block;}
+  .progress-bar{
+    height:100%;
+    background:var(--accent-dim);
+    width:0%;
+    transition:width .2s;
+  }
+  .hint{font-size:0.78rem;color:var(--muted);margin-top:-6px;margin-bottom:14px;line-height:1.6;}
+  a{color:var(--accent);}
+  .howto{
+    background:#0d1117;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:14px;
+    font-size:0.82rem;
+    line-height:2;
+    color:var(--text);
+  }
+  .howto b{color:var(--accent);}
+  .howto ol{margin:6px 0 0;padding-inline-start:20px;}
+  .toggle-howto{
+    font-size:0.78rem;
+    color:var(--accent);
+    cursor:pointer;
+    margin-bottom:10px;
+    display:inline-block;
+  }
+  .clear-link{
+    font-size:0.75rem;
+    color:var(--muted);
+    text-decoration:underline;
+    cursor:pointer;
+    margin-top:-8px;
+    display:inline-block;
+    margin-bottom:12px;
+  }
+  .back-link{
+    font-size:0.78rem;
+    color:var(--accent);
+    cursor:pointer;
+    display:inline-block;
+    margin-bottom:16px;
+  }
+  .mode-btn{
+    display:block;
+    width:100%;
+    padding:20px 16px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--panel);
+    color:var(--text);
+    text-align:right;
+    cursor:pointer;
+    margin-bottom:12px;
+  }
+  .mode-btn:active{border-color:var(--accent-dim);}
+  .mode-btn .icon{font-size:1.6rem;margin-inline-end:10px;}
+  .mode-btn .title{font-size:1rem;font-weight:700;}
+  .mode-btn .desc{font-size:0.8rem;color:var(--muted);margin-top:4px;line-height:1.6;}
+  .warn{
+    background:#3d1f00;
+    border:1px solid #7d4a00;
+    color:#ffb454;
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:0.82rem;
+    margin-bottom:14px;
+    line-height:1.7;
+  }
+  .commit{
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .commit.selected{border-color:var(--accent);background:#0d1117;}
+  .commit .msg{font-weight:600;font-size:0.92rem;margin-bottom:4px;}
+  .commit .meta{font-size:0.75rem;color:var(--muted);font-family:var(--mono);direction:ltr;text-align:left;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📁⇄🐙 PocketPush</h1>
+  <p class="sub" id="topSub">کل پوشه‌ی پروژه‌ت رو مستقیم توی یه ریپوی گیت‌هاب push کن، یا یه پوش اشتباه رو برگردون — بدون ترمینال، بدون دستور.</p>
+
+  <!-- ===== صفحه‌ی انتخاب حالت ===== -->
+  <div id="modeSelect">
+    <div class="mode-btn" id="modeSelectPush">
+      <span class="icon">🚀</span><span class="title">Push کردن یه پوشه</span>
+      <div class="desc">کل یه پوشه یا zip پروژه رو با ساختار کامل روی یه ریپو push کن.</div>
+    </div>
+    <div class="mode-btn" id="modeSelectRollback">
+      <span class="icon">⏪</span><span class="title">بازگردانی شاخه</span>
+      <div class="desc">یه پوش اشتباه رو با برگردوندن شاخه به یه commit قبلی جبران کن.</div>
+    </div>
+  </div>
+
+  <!-- ===== فیلدهای مشترک (بعد از انتخاب حالت) ===== -->
+  <div id="commonFields" style="display:none">
+    <span class="back-link" id="backBtn">‹ بازگشت به انتخاب حالت</span>
+
+    <div class="card">
+      <span class="step-num">۱</span>
+      <p class="card-title">توکن گیت‌هاب</p>
+
+      <span class="toggle-howto" id="howtoToggle">چطور توکن بسازم؟ ▾</span>
+      <div class="howto" id="howtoBox" style="display:none">
+        <ol>
+          <li>برو به <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> (وارد اکانتت شو اگه نیستی)</li>
+          <li>توی <b>Note</b> یه اسم دلخواه بزن، مثلاً "pocketpush"</li>
+          <li><b>Expiration</b> رو هر چی خواستی بذار (مثلاً ۹۰ روز)</li>
+          <li>پایین صفحه، تیک <b>repo</b> رو بزن (دسترسی کامل به ریپوها)</li>
+          <li>پایین صفحه دکمه‌ی <b>Generate token</b> رو بزن</li>
+          <li>یه کد سبز رنگ که با <b>ghp_</b> شروع می‌شه بهت نشون می‌ده — همونو کپی کن و اینجا بچسبون (فقط همون یه‌بار نشونش می‌ده، پس همین‌جا ذخیره‌ش کن)</li>
+        </ol>
+      </div>
+
+      <label>Personal Access Token</label>
+      <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+      <div class="hint">توکنت فقط توی همین مرورگر، روی همین گوشی ذخیره می‌شه — هیچ جای دیگه‌ای نمی‌ره.</div>
+    </div>
+
+    <div class="card">
+      <span class="step-num">۲</span>
+      <p class="card-title" id="destTitle">مقصد</p>
+
+      <label>Owner <span class="hint" style="margin:0">— یوزرنیم گیت‌هابت یا اسم سازمان</span></label>
+      <input type="text" id="owner" placeholder="مثلاً: aliahmadi">
+
+      <label>Repo <span class="hint" style="margin:0">— اسم ریپو (باید از قبل ساخته شده باشه)</span></label>
+      <input type="text" id="repo" placeholder="مثلاً: my-project">
+
+      <label>Branch</label>
+      <input type="text" id="branch" placeholder="main" value="main">
+      <div class="hint" id="branchHint">اگه ریپو تازه ساختیش و کاملاً خالیه (هیچ commit یا README نداره)، همین <b>main</b> رو دست نزن — ابزار خودش تشخیص می‌ده خالیه و اولین commit رو خودش می‌سازه. فقط اگه از قبل یه شاخه‌ی دیگه (مثلاً master یا dev) داری که می‌خوای روش push کنی، اسمش رو اینجا بذار.</div>
+
+      <div id="pushOnlyDestFields">
+        <label>پیام Commit</label>
+        <input type="text" id="message" placeholder="Upload project folder" value="Upload project folder">
+        <div class="hint">همین متن پیش‌فرض کاملاً کافیه، لازم نیست عوضش کنی — فقط توضیح کوتاهیه که کنار این commit توی تاریخچه‌ی ریپو ثبت می‌شه.</div>
+
+        <label>زیرپوشه‌ی مقصد <span class="hint" style="margin:0">— اختیاری</span></label>
+        <input type="text" id="targetFolder" placeholder="مثلاً: src  (خالی = ریشه‌ی ریپو)">
+        <div class="hint">اگه پر کنی، کل فایل‌ها داخل همین زیرپوشه از ریپو قرار می‌گیرن، نه توی ریشه. اکثر مواقع لازم نیست پرش کنی.</div>
+      </div>
+
+      <span class="clear-link" id="clearSaved">پاک کردن اطلاعات ذخیره‌شده</span>
+    </div>
+
+    <!-- ===== بخش مخصوص Push ===== -->
+    <div id="pushSection" style="display:none">
+      <div class="card">
+        <span class="step-num">۳</span>
+        <p class="card-title">انتخاب پوشه یا ZIP</p>
+
+        <label class="filebtn" id="zipBtnLabel" for="zipInput">
+          یه فایل .zip انتخاب کن
+        </label>
+        <input type="file" id="zipInput" accept=".zip">
+
+        <label class="filebtn" id="dirBtnLabel" for="dirInput">
+          یا مستقیم خود پوشه رو انتخاب کن (Android Chrome)
+        </label>
+        <input type="file" id="dirInput" webkitdirectory multiple>
+        <div class="hint">اگه گوشیت اجازه‌ی انتخاب مستقیم پوشه رو نداد (مثل آیفون)، اول با اپ فایل‌های گوشی پوشه رو zip کن، بعد گزینه‌ی اول رو بزن.</div>
+
+        <label style="margin-top:6px">
+          <input type="checkbox" id="excludeHeavy" checked style="width:auto;margin-inline-end:6px;vertical-align:middle;">
+          <span style="font-weight:400;color:var(--text);vertical-align:middle;">نادیده گرفتن پوشه‌های سنگین و غیرضروری (node_modules، venv، __pycache__، dist، build، .next)</span>
+        </label>
+        <div class="hint">پوشه‌ی <b>.git</b> همیشه و بدون قابل‌تغییر نادیده گرفته می‌شه، چون خود GitHub اجازه‌ی push کردنش رو نمی‌ده.</div>
+        <div id="fileSummary" class="hint" style="display:none"></div>
+      </div>
+
+      <div class="card">
+        <span class="step-num">۴</span>
+        <p class="card-title">Push</p>
+        <button class="btn" id="pushBtn" disabled>یه فایل یا پوشه انتخاب کن</button>
+        <button class="btn secondary" id="resetBtn" style="display:none;margin-top:8px;">شروع دوباره (یه پروژه‌ی دیگه)</button>
+        <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== بخش مخصوص بازگردانی ===== -->
+    <div id="rollbackSection" style="display:none">
+      <div class="card">
+        <span class="step-num">۳</span>
+        <p class="card-title">انتخاب نقطه‌ی بازگشت</p>
+        <div class="warn">این کار شاخه رو دقیقاً به همون نقطه‌ای که انتخاب می‌کنی برمی‌گردونه (یعنی commit‌های بعد از اون دیگه روی شاخه دیده نمی‌شن). خود commit‌ها توی گیت‌هاب برای مدتی باقی می‌مونن، ولی قبلش مطمئن شو commit درست رو انتخاب کردی.</div>
+        <button class="btn secondary" id="loadCommitsBtn">نمایش commit‌های اخیر</button>
+        <div id="commitsList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <span class="step-num">۴</span>
+        <p class="card-title">بازگردانی</p>
+        <button class="btn danger" id="rollbackBtn" disabled>اول یه commit از بالا انتخاب کن</button>
+      </div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// حالت (Push یا Rollback)
+// ============================================================
+let mode = null;
+
+document.getElementById('modeSelectPush').addEventListener('click', ()=> setMode('push'));
+document.getElementById('modeSelectRollback').addEventListener('click', ()=> setMode('rollback'));
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  document.getElementById('modeSelect').style.display = 'block';
+  document.getElementById('commonFields').style.display = 'none';
+  mode = null;
+});
+
+function setMode(m){
+  mode = m;
+  document.getElementById('modeSelect').style.display = 'none';
+  document.getElementById('commonFields').style.display = 'block';
+  document.getElementById('pushSection').style.display = (m === 'push') ? 'block' : 'none';
+  document.getElementById('rollbackSection').style.display = (m === 'rollback') ? 'block' : 'none';
+  document.getElementById('pushOnlyDestFields').style.display = (m === 'push') ? 'block' : 'none';
+  document.getElementById('destTitle').textContent = (m === 'push') ? 'مقصد Push' : 'مقصد بازگردانی';
+  document.getElementById('branchHint').style.display = (m === 'push') ? 'block' : 'none';
+  clearLog();
+  setProgress(null);
+}
+
+// ============================================================
+// فیلدهای ذخیره‌شونده
+// ============================================================
+let files = null; // array of {path, base64} — فقط برای push
+
+const PERSIST_KEYS = ['token','owner','repo','branch','targetFolder'];
+function loadSaved(){
+  PERSIST_KEYS.forEach(k=>{
+    const el = document.getElementById(k);
+    if(!el) return;
+    const v = localStorage.getItem('ghpush_'+k);
+    if(v) el.value = v;
+  });
+}
+PERSIST_KEYS.forEach(k=>{
+  const el = document.getElementById(k);
+  if(el) el.addEventListener('input', (e)=> localStorage.setItem('ghpush_'+k, e.target.value));
+});
+document.getElementById('clearSaved').addEventListener('click', ()=>{
+  PERSIST_KEYS.forEach(k=>{
+    localStorage.removeItem('ghpush_'+k);
+    const el = document.getElementById(k);
+    if(el) el.value = '';
+  });
+  document.getElementById('branch').value = 'main';
+  alert('پاک شد.');
+});
+loadSaved();
+
+document.getElementById('howtoToggle').addEventListener('click', ()=>{
+  const box = document.getElementById('howtoBox');
+  const shown = box.style.display !== 'none';
+  box.style.display = shown ? 'none' : 'block';
+  document.getElementById('howtoToggle').textContent = shown ? 'چطور توکن بسازم؟ ▾' : 'چطور توکن بسازم؟ ▴';
+});
+
+// ============================================================
+// کمکی‌های مشترک
+// ============================================================
+function logLine(text, cls){
+  const log = document.getElementById('log');
+  log.classList.add('show');
+  const span = document.createElement('div');
+  if(cls) span.className = cls;
+  span.textContent = text;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog(){
+  const log = document.getElementById('log');
+  log.innerHTML = '';
+  log.classList.remove('show');
+}
+function setProgress(pct){
+  const p = document.getElementById('progress');
+  const b = document.getElementById('progressBar');
+  if(pct === null){ p.classList.remove('show'); return; }
+  p.classList.add('show');
+  b.style.width = pct + '%';
+}
+function arrayBufferToBase64(buffer){
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+  }
+  return btoa(binary);
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// اگه گیت‌هاب موقتاً به‌خاطر rate limit یا تأخیر sync درخواست رو رد کرد، خودکار دوباره تلاش می‌کنه
+async function fetchWithRetry(url, options, retries = 3){
+  for(let attempt = 0; attempt <= retries; attempt++){
+    let res;
+    try{
+      res = await fetch(url, options);
+    } catch(networkErr){
+      if(attempt === retries) throw networkErr;
+      const waitMs = 1500 * (attempt + 1);
+      logLine(`قطعی موقت شبکه، ${Math.round(waitMs/1000)} ثانیه صبر می‌کنه و دوباره تلاش می‌کنه...`, 'dim');
+      await new Promise(r => setTimeout(r, waitMs));
+      continue;
+    }
+    const transient = res.status === 403 || res.status === 429 || res.status === 404 || res.status >= 500;
+    if(!transient) return res;
+    if(attempt === retries) return res;
+    const resetHeader = res.headers.get('x-ratelimit-reset');
+    const retryAfterHeader = res.headers.get('retry-after');
+    let waitMs = 1500 * (attempt + 1);
+    if(res.status === 403 || res.status === 429){
+      if(retryAfterHeader) waitMs = parseInt(retryAfterHeader, 10) * 1000;
+      else if(resetHeader){
+        const resetMs = parseInt(resetHeader, 10) * 1000 - Date.now();
+        if(resetMs > 0 && resetMs < 60000) waitMs = resetMs + 500;
+      }
+      logLine(`محدودیت موقت گیت‌هاب، ${Math.round(waitMs/1000)} ثانیه صبر می‌کنه و دوباره تلاش می‌کنه...`, 'dim');
+    } else {
+      logLine(`پاسخ موقت نامعتبر (${res.status})، ${Math.round(waitMs/1000)} ثانیه صبر می‌کنه و دوباره تلاش می‌کنه...`, 'dim');
+    }
+    await new Promise(r => setTimeout(r, waitMs));
+  }
+}
+
+// ============================================================
+// ===== بخش Push =====
+// ============================================================
+function updatePushReady(){
+  const btn = document.getElementById('pushBtn');
+  if(files && files.length){
+    btn.disabled = false;
+    btn.textContent = `Push کن (${files.length} فایل)`;
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'یه فایل یا پوشه انتخاب کن';
+  }
+}
+
+const ALWAYS_EXCLUDE_DIRS = ['.git'];
+const HEAVY_EXCLUDE_DIRS = ['node_modules','venv','.venv','env','__pycache__','dist','build','.next','target','.gradle','.idea','.cache'];
+const JUNK_FILENAMES = ['.DS_Store','Thumbs.db','desktop.ini'];
+const JUNK_DIRNAMES = ['__MACOSX'];
+
+function normalizePath(p){
+  return p
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(seg => seg !== '' && seg !== '.')
+    .join('/');
+}
+
+function filterAndCleanFiles(rawFiles){
+  const excludeHeavy = document.getElementById('excludeHeavy').checked;
+  const kept = [];
+  let skippedGit = 0, skippedHeavy = 0, skippedJunk = 0, totalBytes = 0;
+
+  for(const f of rawFiles){
+    const norm = normalizePath(f.path);
+    if(!norm) { skippedJunk++; continue; }
+    const segments = norm.split('/');
+    const fileName = segments[segments.length-1];
+
+    if(segments.includes('.git')){ skippedGit++; continue; }
+    if(segments.some(s => JUNK_DIRNAMES.includes(s))){ skippedJunk++; continue; }
+    if(JUNK_FILENAMES.includes(fileName)){ skippedJunk++; continue; }
+    if(excludeHeavy && segments.some(s => HEAVY_EXCLUDE_DIRS.includes(s))){ skippedHeavy++; continue; }
+
+    totalBytes += Math.floor(f.base64.length * 0.75);
+    kept.push({ path: norm, base64: f.base64 });
+  }
+  return { kept, skippedGit, skippedHeavy, skippedJunk, totalBytes };
+}
+
+function formatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function showFileSummary(result){
+  const el = document.getElementById('fileSummary');
+  const parts = [];
+  if(result.skippedGit) parts.push(`.git نادیده گرفته شد (${result.skippedGit} فایل)`);
+  if(result.skippedHeavy) parts.push(`پوشه‌های سنگین نادیده گرفته شد (${result.skippedHeavy} فایل)`);
+  if(result.skippedJunk) parts.push(`فایل‌های زائد سیستمی نادیده گرفته شد (${result.skippedJunk} فایل)`);
+
+  el.style.display = 'block';
+  let text = `${result.kept.length} فایل، حجم کل ${formatBytes(result.totalBytes)} برای آپلود آماده‌ست`;
+  if(parts.length) text += ` — ${parts.join('، ')}`;
+  text += '.';
+  if(result.totalBytes > 90*1024*1024){
+    text += ' توجه: حجم بالاست، ممکنه push کمی طول بکشه.';
+  }
+  el.textContent = text;
+}
+
+function stripCommonPrefix(rawFiles){
+  if(!rawFiles.length) return rawFiles;
+  const normalized = rawFiles.map(f => ({...f, path: normalizePath(f.path)}));
+  const parts0 = normalized[0].path.split('/');
+  if(parts0.length < 2) { window.__lastRawFiles = normalized; return normalized; }
+  const prefix = parts0[0] + '/';
+  const allShare = normalized.every(f => f.path.startsWith(prefix));
+  const result = allShare ? normalized.map(f => ({...f, path: f.path.slice(prefix.length)})) : normalized;
+  window.__lastRawFiles = result;
+  return result;
+}
+
+document.getElementById('zipInput').addEventListener('change', async (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  document.getElementById('zipBtnLabel').classList.add('active');
+  document.getElementById('zipBtnLabel').textContent = f.name;
+  document.getElementById('dirInput').value = '';
+  document.getElementById('dirBtnLabel').classList.remove('active');
+  document.getElementById('dirBtnLabel').textContent = 'یا مستقیم خود پوشه رو انتخاب کن (Android Chrome)';
+
+  clearLog();
+  logLine('در حال باز کردن zip...', 'dim');
+  const zip = await JSZip.loadAsync(f);
+  const entries = Object.values(zip.files).filter(z => !z.dir);
+  let raw = [];
+  for(const entry of entries){
+    const buf = await entry.async('arraybuffer');
+    raw.push({ path: entry.name, base64: arrayBufferToBase64(buf) });
+  }
+  raw = stripCommonPrefix(raw);
+  const result = filterAndCleanFiles(raw);
+  files = result.kept;
+  logLine(`${raw.length} فایل از zip خونده شد.`, 'ok');
+  showFileSummary(result);
+  updatePushReady();
+});
+
+document.getElementById('dirInput').addEventListener('change', async (e)=>{
+  const list = Array.from(e.target.files);
+  if(!list.length) return;
+  document.getElementById('dirBtnLabel').classList.add('active');
+  document.getElementById('dirBtnLabel').textContent = `${list.length} فایل از پوشه انتخاب شد`;
+  document.getElementById('zipInput').value = '';
+  document.getElementById('zipBtnLabel').classList.remove('active');
+  document.getElementById('zipBtnLabel').textContent = 'یه فایل .zip انتخاب کن';
+
+  clearLog();
+  logLine('در حال خوندن فایل‌ها...', 'dim');
+  let raw = [];
+  for(const f of list){
+    const buf = await f.arrayBuffer();
+    raw.push({ path: f.webkitRelativePath || f.name, base64: arrayBufferToBase64(buf) });
+  }
+  raw = stripCommonPrefix(raw);
+  const result = filterAndCleanFiles(raw);
+  files = result.kept;
+  logLine(`${raw.length} فایل خونده شد.`, 'ok');
+  showFileSummary(result);
+  updatePushReady();
+});
+
+document.getElementById('excludeHeavy').addEventListener('change', ()=>{
+  if(window.__lastRawFiles){
+    const result = filterAndCleanFiles(window.__lastRawFiles);
+    files = result.kept;
+    showFileSummary(result);
+    updatePushReady();
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  files = null;
+  window.__lastRawFiles = null;
+  document.getElementById('zipInput').value = '';
+  document.getElementById('dirInput').value = '';
+  document.getElementById('zipBtnLabel').classList.remove('active');
+  document.getElementById('zipBtnLabel').textContent = 'یه فایل .zip انتخاب کن';
+  document.getElementById('dirBtnLabel').classList.remove('active');
+  document.getElementById('dirBtnLabel').textContent = 'یا مستقیم خود پوشه رو انتخاب کن (Android Chrome)';
+  document.getElementById('fileSummary').style.display = 'none';
+  document.getElementById('resetBtn').style.display = 'none';
+  clearLog();
+  setProgress(null);
+  updatePushReady();
+});
+
+document.getElementById('pushBtn').addEventListener('click', async ()=>{
+  const token = document.getElementById('token').value.trim();
+  const owner = document.getElementById('owner').value.trim();
+  const repo = document.getElementById('repo').value.trim();
+  const branch = document.getElementById('branch').value.trim() || 'main';
+  const message = document.getElementById('message').value.trim() || 'Upload project folder';
+  let targetFolder = document.getElementById('targetFolder').value.trim();
+  targetFolder = targetFolder.replace(/^\/+|\/+$/g, '');
+
+  if(!token || !owner || !repo){
+    alert('توکن، owner و نام ریپو رو پر کن.');
+    return;
+  }
+  if(!files || !files.length){
+    alert('اول یه فایل یا پوشه انتخاب کن.');
+    return;
+  }
+
+  const pushFiles = targetFolder
+    ? files.map(f => ({ path: `${targetFolder}/${f.path}`, base64: f.base64 }))
+    : files;
+
+  const btn = document.getElementById('pushBtn');
+  btn.disabled = true;
+  document.getElementById('resetBtn').style.display = 'none';
+  clearLog();
+  setProgress(0);
+
+  const api = `https://api.github.com/repos/${owner}/${repo}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github+json'
+  };
+
+  try{
+    logLine(`اتصال به ${owner}/${repo} ...`, 'dim');
+    let refRes = await fetchWithRetry(`${api}/git/ref/heads/${branch}`, {headers});
+    let baseCommitSha, baseTreeSha, refExists = refRes.ok;
+    let trulyEmptyRepo = false;
+
+    if(refRes.ok){
+      const refData = await refRes.json();
+      baseCommitSha = refData.object.sha;
+      const commitRes = await fetchWithRetry(`${api}/git/commits/${baseCommitSha}`, {headers});
+      const commitData = await commitRes.json();
+      baseTreeSha = commitData.tree.sha;
+      logLine(`شاخه‌ی ${branch} پیدا شد.`, 'ok');
+    } else if(refRes.status === 404) {
+      const branchesRes = await fetchWithRetry(`${api}/branches?per_page=1`, {headers});
+      if(!branchesRes.ok){
+        if(branchesRes.status === 404){
+          throw new Error(`ریپوی ${owner}/${repo} پیدا نشد. مطمئن شو اسمش درسته و از قبل روی گیت‌هاب ساختیش.`);
+        }
+        throw new Error('دسترسی به ریپو ممکن نشد. توکن رو چک کن (باید دسترسی repo داشته باشه).');
+      }
+      const branchesData = await branchesRes.json();
+
+      if(branchesData.length > 0){
+        logLine(`شاخه‌ی ${branch} پیدا نشد، از روی شاخه‌ی پیش‌فرض ریپو ساخته می‌شه...`, 'dim');
+        const repoInfoRes = await fetchWithRetry(api, {headers});
+        if(!repoInfoRes.ok) throw new Error('اطلاعات ریپو در دسترس نبود.');
+        const repoInfo = await repoInfoRes.json();
+        const defBranch = repoInfo.default_branch;
+        const defRefRes = await fetchWithRetry(`${api}/git/ref/heads/${defBranch}`, {headers});
+        const defRefData = await defRefRes.json();
+        baseCommitSha = defRefData.object.sha;
+        const defCommitRes = await fetchWithRetry(`${api}/git/commits/${baseCommitSha}`, {headers});
+        const defCommitData = await defCommitRes.json();
+        baseTreeSha = defCommitData.tree.sha;
+      } else {
+        trulyEmptyRepo = true;
+        logLine(`ریپو کاملاً خالیه، اولین commit ساخته می‌شه.`, 'dim');
+      }
+    } else if(refRes.status === 409) {
+      // گیت‌هاب برای ریپوی کاملاً خالی، به‌جای 404 کد 409 ("Git Repository is empty") برمی‌گردونه
+      trulyEmptyRepo = true;
+      logLine('ریپو کاملاً خالیه، اولین commit ساخته می‌شه.', 'dim');
+    } else {
+      throw new Error(`خطا در بررسی شاخه (کد ${refRes.status}). توکن یا نام ریپو رو چک کن.`);
+    }
+
+    let uploadFiles = pushFiles;
+    if(trulyEmptyRepo){
+      logLine('اول یه فایل برای فعال‌سازی ریپو می‌فرسته...', 'dim');
+      const first = pushFiles[0];
+      const encodedPath = first.path.split('/').map(encodeURIComponent).join('/');
+      const initRes = await fetchWithRetry(`${api}/contents/${encodedPath}`, {
+        method:'PUT', headers,
+        body: JSON.stringify({
+          message: message,
+          content: first.base64,
+          branch: branch
+        })
+      });
+      if(!initRes.ok){
+        const e = await initRes.json();
+        throw new Error(`خطا در فعال‌سازی ریپو با ${first.path}: ${e.message}`);
+      }
+      logLine(`✓ ${first.path} (فایل اولیه)`, 'dim');
+      setProgress(5);
+
+      const refRes2 = await fetchWithRetry(`${api}/git/ref/heads/${branch}`, {headers});
+      const refData2 = await refRes2.json();
+      baseCommitSha = refData2.object.sha;
+      const commitRes2 = await fetchWithRetry(`${api}/git/commits/${baseCommitSha}`, {headers});
+      const commitData2 = await commitRes2.json();
+      baseTreeSha = commitData2.tree.sha;
+      refExists = true;
+
+      uploadFiles = pushFiles.slice(1);
+    }
+
+    logLine(`در حال آپلود ${uploadFiles.length} فایل باقی‌مونده...`, 'dim');
+    const tree = [];
+    for(let i=0;i<uploadFiles.length;i++){
+      const f = uploadFiles[i];
+      const blobRes = await fetchWithRetry(`${api}/git/blobs`, {
+        method:'POST', headers,
+        body: JSON.stringify({ content: f.base64, encoding: 'base64' })
+      });
+      if(!blobRes.ok){
+        const err = await blobRes.json();
+        throw new Error(`خطا در آپلود ${f.path}: ${err.message}`);
+      }
+      const blobData = await blobRes.json();
+      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blobData.sha });
+      setProgress(Math.round(((i+1)/uploadFiles.length)*80));
+      logLine(`✓ ${f.path}`, 'dim');
+    }
+
+    logLine('در حال ساخت tree...', 'dim');
+    const treeBody = { tree };
+    if(baseTreeSha) treeBody.base_tree = baseTreeSha;
+    const treeRes = await fetchWithRetry(`${api}/git/trees`, {
+      method:'POST', headers, body: JSON.stringify(treeBody)
+    });
+    if(!treeRes.ok){ const e = await treeRes.json(); throw new Error('خطا در ساخت tree: '+e.message); }
+    const treeData = await treeRes.json();
+    setProgress(88);
+
+    logLine('در حال ساخت commit...', 'dim');
+    const commitBody = { message, tree: treeData.sha };
+    if(baseCommitSha) commitBody.parents = [baseCommitSha];
+    const newCommitRes = await fetchWithRetry(`${api}/git/commits`, {
+      method:'POST', headers, body: JSON.stringify(commitBody)
+    });
+    if(!newCommitRes.ok){ const e = await newCommitRes.json(); throw new Error('خطا در ساخت commit: '+e.message); }
+    const newCommitData = await newCommitRes.json();
+    setProgress(94);
+
+    logLine('در حال آپدیت شاخه...', 'dim');
+    const refUpdateUrl = refExists ? `${api}/git/refs/heads/${branch}` : `${api}/git/refs`;
+    const refUpdateBody = refExists
+      ? { sha: newCommitData.sha, force: false }
+      : { ref: `refs/heads/${branch}`, sha: newCommitData.sha };
+    const refUpdateRes = await fetchWithRetry(refUpdateUrl, {
+      method: refExists ? 'PATCH' : 'POST',
+      headers, body: JSON.stringify(refUpdateBody)
+    });
+    if(!refUpdateRes.ok){ const e = await refUpdateRes.json(); throw new Error('خطا در آپدیت شاخه: '+e.message); }
+
+    setProgress(100);
+    logLine(`تمام! ${pushFiles.length} فایل روی ${owner}/${repo}@${branch} پوش شد.`, 'ok');
+    logLine(`https://github.com/${owner}/${repo}`, 'ok');
+    document.getElementById('resetBtn').style.display = 'block';
+
+  } catch(err){
+    logLine('خطا: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    setTimeout(()=>setProgress(null), 1500);
+  }
+});
+
+// ============================================================
+// ===== بخش Rollback =====
+// ============================================================
+let selectedSha = null;
+
+document.getElementById('loadCommitsBtn').addEventListener('click', async ()=>{
+  const token = document.getElementById('token').value.trim();
+  const owner = document.getElementById('owner').value.trim();
+  const repo = document.getElementById('repo').value.trim();
+  const branch = document.getElementById('branch').value.trim() || 'main';
+  if(!token || !owner || !repo){ alert('توکن، owner و repo رو پر کن.'); return; }
+
+  const btn = document.getElementById('loadCommitsBtn');
+  btn.disabled = true; btn.textContent = 'در حال دریافت...';
+  clearLog();
+  selectedSha = null;
+  document.getElementById('rollbackBtn').disabled = true;
+  document.getElementById('rollbackBtn').textContent = 'اول یه commit از بالا انتخاب کن';
+
+  try{
+    const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' };
+    const res = await fetchWithRetry(`https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=20`, {headers});
+    if(!res.ok){ const e = await res.json(); throw new Error(e.message || 'خطا در دریافت commit‌ها'); }
+    const commits = await res.json();
+
+    const list = document.getElementById('commitsList');
+    list.innerHTML = '';
+    commits.forEach((c, i)=>{
+      const div = document.createElement('div');
+      div.className = 'commit';
+      const msg = (c.commit.message || '').split('\n')[0];
+      const date = new Date(c.commit.author.date).toLocaleString('fa-IR');
+      div.innerHTML = `<div class="msg">${i===0 ? '🔹 آخرین (فعلی): ' : ''}${escapeHtml(msg)}</div><div class="meta">${c.sha.slice(0,7)} — ${date}</div>`;
+      div.addEventListener('click', ()=>{
+        document.querySelectorAll('.commit').forEach(el=>el.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedSha = c.sha;
+        document.getElementById('rollbackBtn').disabled = false;
+        document.getElementById('rollbackBtn').textContent = `بازگردانی به ${c.sha.slice(0,7)}`;
+      });
+      list.appendChild(div);
+    });
+  } catch(err){
+    logLine('خطا: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'نمایش commit‌های اخیر';
+  }
+});
+
+document.getElementById('rollbackBtn').addEventListener('click', async ()=>{
+  if(!selectedSha) return;
+  if(!confirm('مطمئنی؟ شاخه به این commit برمی‌گرده و commit‌های بعدش دیگه روی شاخه دیده نمی‌شن.')) return;
+
+  const token = document.getElementById('token').value.trim();
+  const owner = document.getElementById('owner').value.trim();
+  const repo = document.getElementById('repo').value.trim();
+  const branch = document.getElementById('branch').value.trim() || 'main';
+  const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
+
+  const btn = document.getElementById('rollbackBtn');
+  btn.disabled = true;
+  try{
+    const res = await fetchWithRetry(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+      method: 'PATCH', headers,
+      body: JSON.stringify({ sha: selectedSha, force: true })
+    });
+    if(!res.ok){ const e = await res.json(); throw new Error(e.message || 'خطا در بازگردانی'); }
+    logLine(`✓ شاخه‌ی ${branch} به ${selectedSha.slice(0,7)} برگشت.`, 'ok');
+    logLine(`https://github.com/${owner}/${repo}`, 'ok');
+  } catch(err){
+    logLine('خطا: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
